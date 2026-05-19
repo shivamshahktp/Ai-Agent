@@ -9,23 +9,28 @@ const analyzeTicket = async (ticket) => {
     // This is the CRITICAL fix for 2026:
     // We use gemini-3-flash and FORCE the apiVersion to 'v1'
     const model = genAI.getGenerativeModel(
-      { model: "gemini-2.5-flash" }, 
+      { 
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      }, 
       { apiVersion: "v1" } 
     ); 
 
     const prompt = `
-      You are an expert IT assistant. Analyze this ticket and provide a strictly formatted JSON object.
-      Title: ${ticket.title}
-      Description: ${ticket.description}
+      You are an expert IT Helpdesk Triage Agent for an enterprise organization.
+      Your job is to analyze the user's IT support ticket and provide a strictly formatted JSON response.
       
-      Respond ONLY with this JSON structure:
-      {
-        "summary": "Short 1-2 sentence summary",
-        "priority": "low, medium, or high",
-        "helpfulNotes": "Technical advice for the developer OR the complete solution for the user",
-        "relatedSkills": ["React", "Node.js"],
-        "isAutoResolvable": false // Set to true ONLY if this is a simple question or request you can fully answer in helpfulNotes without a human agent.
-      }
+      Ticket Title: "${ticket.title}"
+      Ticket Description: "${ticket.description}"
+      
+      Instructions for your JSON response:
+      1. "summary": Provide a concise 1-2 sentence summary of the core issue.
+      2. "priority": Determine the urgency. Use "high" for complete system outages, hardware failures, or security issues. Use "medium" for software bugs or performance issues. Use "low" for feature requests or minor questions.
+      3. "helpfulNotes": If it's a complex issue, provide detailed diagnostic steps for the IT technician. If it's a simple user-error or FAQ, write the complete step-by-step solution for the user.
+      4. "relatedSkills": An array of technical tags needed to solve this (e.g., ["Hardware", "MacOS", "Database", "Networking"]).
+      5. "isAutoResolvable": Set this to true ONLY if you are 100% confident that your "helpfulNotes" fully solve the user's problem without needing a human IT agent. Otherwise, set it to false.
+      
+      Respond ONLY with the JSON object.
     `;
 
     const result = await model.generateContent(prompt);
