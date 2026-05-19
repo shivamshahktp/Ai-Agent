@@ -9,10 +9,7 @@ const analyzeTicket = async (ticket) => {
     // This is the CRITICAL fix for 2026:
     // We use gemini-3-flash and FORCE the apiVersion to 'v1'
     const model = genAI.getGenerativeModel(
-      { 
-        model: "gemini-2.5-flash",
-        generationConfig: { responseMimeType: "application/json" }
-      }, 
+      { model: "gemini-2.5-flash" }, 
       { apiVersion: "v1" } 
     ); 
 
@@ -37,8 +34,13 @@ const analyzeTicket = async (ticket) => {
     const response = await result.response;
     let text = response.text();
     
-    // Clean markdown code blocks
-    text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    // Clean markdown code blocks and conversational filler
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      text = jsonMatch[0];
+    } else {
+      text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    }
     
     console.log("✅ AI Agent: SUCCESS! Gemini 2.5 has responded.");
     return JSON.parse(text);
